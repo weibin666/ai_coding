@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>论文雷达 · 每日顶会论文推荐</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand">
+      <h1>论文雷达</h1>
+      <p class="brand-sub">PAPER RADAR · 顶会前沿每日精选</p>
+    </div>
+    <div class="masthead-meta">
+      <div class="meta-item">
+        <span class="meta-label">本期日期</span>
+        <span class="meta-value mono">{{ date or "暂无数据" }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">本期收录</span>
+        <span class="meta-value mono">{{ stats.latest_count }} 篇</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">下次更新 {{ update_time }}({{ timezone }})</span>
+        <span class="meta-value mono" id="countdown">--:--:--</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="field-index" aria-label="领域索引">
+  <button class="field-tab is-active" data-field="all">全部 <span class="tab-count mono">{{ papers|length }}</span></button>
+  {% for key, name in fields %}
+  <button class="field-tab" data-field="{{ key }}">{{ name }} <span class="tab-count mono">{{ counts[key] }}</span></button>
+  {% endfor %}
+</nav>
+
+<main class="content">
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="在本期论文中搜索标题或摘要…" aria-label="搜索论文">
+    <span class="toolbar-hint" id="visible-count"></span>
+  </div>
+
+  {% if not papers %}
+  <div class="empty">
+    <p>数据库尚无论文。服务启动后会自动抓取首批数据,通常需要一两分钟;</p>
+    <p>也可手动执行 <code>python pipeline.py</code> 立即抓取。</p>
+  </div>
+  {% endif %}
+
+  <section class="paper-list" id="paper-list">
+    {% for p in papers %}
+    <article class="paper-card"
+             data-fields="{{ p.fields|join(' ') }}"
+             data-search="{{ (p.title ~ ' ' ~ p.abstract)|lower|e }}">
+      <div class="score-rail" aria-label="质量评分 {{ p.score }}">
+        <div class="score-fill" style="--score: {{ (p.score / 10 * 100)|round(0) }}%"></div>
+        <span class="score-num mono">{{ "%.1f"|format(p.score) }}</span>
+      </div>
+      <div class="paper-body">
+        <div class="paper-tags">
+          {% for f in p.fields %}<span class="tag">{{ dict(fields)[f] if f in dict(fields) else f }}</span>{% endfor %}
+          {% if p.venue %}<span class="tag tag-venue">{{ p.venue }}</span>{% endif %}
+          <span class="tag tag-date mono">{{ p.published[:10] }}</span>
+        </div>
+        <h2 class="paper-title"><a href="{{ p.abs_url }}" target="_blank" rel="noopener">{{ p.title }}</a></h2>
+        <p class="paper-authors">{{ p.authors[:8]|join(", ") }}{% if p.authors|length > 8 %} 等 {{ p.authors|length }} 位作者{% endif %}</p>
+        <div class="paper-summary">
+          {% for line in p.summary_zh.split("\n") %}<p>{{ line }}</p>{% endfor %}
+        </div>
+        <details class="paper-abstract">
+          <summary>查看英文原文摘要</summary>
+          <p>{{ p.abstract }}</p>
+        </details>
+        <div class="paper-links">
+          <a href="{{ p.abs_url }}" target="_blank" rel="noopener">arXiv 页面</a>
+          <a href="{{ p.pdf_url }}" target="_blank" rel="noopener">PDF 全文</a>
+          <span class="mono paper-id">{{ p.arxiv_id }}</span>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+</main>
+
+<footer class="footer">
+  <p>数据来源:arXiv 公开 API(cs.CL / cs.CV / cs.SD / eess.AS / cs.AI / cs.LG / cs.MA),
+     依据顶会接收标记、关键词相关度与新鲜度综合排序。
+     {% if stats.last_update %}上次更新:<span class="mono">{{ stats.last_update }}</span>{% endif %}</p>
+</footer>
+
+<script>
+const UPDATE_HOUR = {{ update_time.split(":")[0]|int }};
+const UPDATE_MINUTE = {{ update_time.split(":")[1]|int }};
+</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
