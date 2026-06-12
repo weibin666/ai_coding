@@ -84,7 +84,7 @@ def api_papers():
 @app.route("/api/status")
 def api_status():
     s = storage.stats()
-    s["next_update"] = "每日 %02d:%02d %s" % (config.UPDATE_HOUR, config.UPDATE_MINUTE, config.TIMEZONE)
+    s["next_update"] = "每日 %02d:%02d 北京时间" % (config.UPDATE_HOUR, config.UPDATE_MINUTE)
     return jsonify(s)
 
 

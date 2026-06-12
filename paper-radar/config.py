@@ -21,9 +21,9 @@ TOP_K_PER_FIELD = int(os.environ.get("PR_TOP_K", "20"))
 # arXiv API 限速(秒),官方建议 >= 3s
 ARXIV_DELAY = float(os.environ.get("PR_ARXIV_DELAY", "3.0"))
 
-# 可选:配置 Anthropic API Key 后,中文介绍改由 LLM 生成
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-LLM_MODEL = os.environ.get("PR_LLM_MODEL", "claude-sonnet-4-20250514")
+# 可选:配置 DEEPSEEK_API_KEY 后,中文介绍改由 LLM 生成
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+LLM_MODEL = os.environ.get("PR_LLM_MODEL", "deepseek-v4-flash")
 
 # ---------------------------------------------------------------- arXiv 类别
 ARXIV_CATEGORIES = [

@@ -4,7 +4,7 @@
 默认规则式:从英文摘要中抽取「任务背景 / 方法贡献 / 实验结果」三类句子,
 拼成结构化中文导读(关键句保留英文原文,避免机器误译)。
 
-可选 LLM 模式:配置 ANTHROPIC_API_KEY 后,自动调用 Claude 生成真正的中文摘要,
+可选 LLM 模式:配置 DEEPSEEK_API_KEY 后,自动调用 DeepSeek 生成真正的中文摘要,
 失败时自动回退到规则式,保证更新流程永不因外部服务中断。
 """
 import json
@@ -51,8 +51,8 @@ def rule_based_summary(paper, field_names):
 
 
 def llm_summary(paper, field_names):
-    """调用 Anthropic API 生成中文摘要,失败返回 None。"""
-    if not config.ANTHROPIC_API_KEY:
+    """调用 DeepSeek API 生成中文摘要,失败返回 None。"""
+    if not config.DEEPSEEK_API_KEY:
         return None
     prompt = (
         "请用中文为下面这篇论文写 3-4 句要点介绍,依次说明:研究问题、核心方法、主要结果。"
@@ -61,10 +61,9 @@ def llm_summary(paper, field_names):
     ).format(title=paper.title, fields=" / ".join(field_names), abstract=paper.abstract[:2500])
     try:
         resp = requests.post(
-            "https://api.anthropic.com/v1/messages",
+            "https://api.deepseek.com/v1/chat/completions",
             headers={
-                "x-api-key": config.ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
+                "Authorization": "Bearer " + config.DEEPSEEK_API_KEY,
                 "content-type": "application/json",
             },
             data=json.dumps({
@@ -76,7 +75,7 @@ def llm_summary(paper, field_names):
         )
         resp.raise_for_status()
         data = resp.json()
-        text = "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text").strip()
+        text = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
         return text or None
     except Exception as e:
         log.warning("LLM 摘要失败,回退规则式: %s", e)
@@ -86,6 +85,6 @@ def llm_summary(paper, field_names):
 def summarize(paper):
     """生成中文介绍并写入 paper.summary_zh。"""
     field_names = [config.FIELDS[f]["name"] for f in paper.fields if f in config.FIELDS]
-    text = llm_summary(paper, field_names) if config.ANTHROPIC_API_KEY else None
+    text = llm_summary(paper, field_names) if config.DEEPSEEK_API_KEY else None
     paper.summary_zh = text or rule_based_summary(paper, field_names)
     return paper.summary_zh
